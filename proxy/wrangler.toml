@@ -1,0 +1,8 @@
+name = "movieradar-proxy"
+main = "src/index.ts"
+compatibility_date = "2026-11-01"
+
+# Secrets (set with `npx wrangler secret put <NAME>`, never committed):
+#   TMDB_TOKEN  - TMDB "API Read Access Token" (v4 bearer)
+#   APP_TOKEN   - random string the Android app sends in X-App-Token
+#   TRAKT_CLIENT_ID - Trakt API app Client ID (for Home's Trending / Most watched / Anticipated)

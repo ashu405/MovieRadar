@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- MovieRadar (plus) icon: orange screen with a white play button and two radar arcs, on white.
+     Kept inside the 66dp adaptive-icon safe zone (21..87). -->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp" android:height="108dp"
+    android:viewportWidth="108" android:viewportHeight="108">
+    <!-- radar arcs -->
+    <path android:strokeColor="#FF7A00" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M38,36 Q54,22 70,36" />
+    <path android:strokeColor="#FF7A00" android:strokeWidth="3.5" android:strokeLineCap="round" android:fillColor="#00000000"
+        android:pathData="M44,41 Q54,32 64,41" />
+    <!-- screen -->
+    <path android:fillColor="#FF7A00"
+        android:pathData="M36,46 h36 a6,6 0 0 1 6,6 v20 a6,6 0 0 1 -6,6 h-36 a6,6 0 0 1 -6,-6 v-20 a6,6 0 0 1 6,-6 z" />
+    <!-- play -->
+    <path android:fillColor="#FFFFFF" android:pathData="M49,53 L62,62 L49,71 Z" />
+</vector>

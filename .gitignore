@@ -1,0 +1,19 @@
+# Android
+android/.gradle/
+android/build/
+android/app/build/
+android/local.properties
+android/.idea/
+android/.kotlin/
+android/captures/
+*.iml
+*.apk
+*.aab
+*.keystore
+*.jks
+# Proxy
+proxy/node_modules/
+proxy/.wrangler/
+proxy/.dev.vars
+# OS
+.DS_Store
