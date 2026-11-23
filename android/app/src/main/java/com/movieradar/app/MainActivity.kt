@@ -9,12 +9,20 @@ import androidx.activity.ComponentActivity
 import androidx.activity.SystemBarStyle
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
+import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import com.movieradar.app.data.local.LibraryRepository
 import com.movieradar.app.ui.MovieRadarRoot
+import com.movieradar.app.ui.components.LocalWatchedKeys
+import javax.inject.Inject
 import com.movieradar.app.ui.theme.MovieRadarTheme
 import dagger.hilt.android.AndroidEntryPoint
 
 @AndroidEntryPoint
 class MainActivity : ComponentActivity() {
+    @Inject lateinit var library: LibraryRepository
+
     override fun onCreate(savedInstanceState: Bundle?) {
         enableEdgeToEdge(
             statusBarStyle = SystemBarStyle.dark(android.graphics.Color.TRANSPARENT),
@@ -23,7 +31,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         openRequest.value = intent.toDetailsRoute()
         setContent {
-            MovieRadarTheme { MovieRadarRoot(openRequest = openRequest.value, onOpenHandled = { openRequest.value = null }) }
+            val watchedKeys by library.watchedKeys.collectAsState(initial = emptySet())
+            CompositionLocalProvider(LocalWatchedKeys provides watchedKeys) {
+                MovieRadarTheme { MovieRadarRoot(openRequest = openRequest.value, onOpenHandled = { openRequest.value = null }) }
+            }
         }
     }
 

@@ -6,6 +6,7 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import androidx.room.Query
 import androidx.room.RoomDatabase
+import androidx.room.Transaction
 import androidx.room.Upsert
 import androidx.room.migration.Migration
 import androidx.sqlite.db.SupportSQLiteDatabase
@@ -41,6 +42,18 @@ data class AlertEntity(
     val posterPath: String?,
     val knownProviderIds: String,
     val createdAt: Long,
+)
+
+/** A title you've ✅ watched (any title, not only Watchlist ones). */
+@Entity(tableName = "watched")
+data class WatchedEntity(
+    @PrimaryKey val key: String, // "movie-123" / "tv-456"
+    val tmdbId: Int,
+    val type: String,
+    val title: String,
+    val posterPath: String?,
+    val year: String?,
+    val watchedAt: Long,
 )
 
 @Dao
@@ -84,9 +97,30 @@ interface LibraryDao {
 
     @Query("DELETE FROM alerts WHERE `key` = :key")
     suspend fun removeAlert(key: String)
+
+    @Query("SELECT * FROM watched ORDER BY watchedAt DESC")
+    fun watched(): Flow<List<WatchedEntity>>
+
+    @Query("SELECT `key` FROM watched")
+    fun watchedKeys(): Flow<List<String>>
+
+    @Query("SELECT EXISTS(SELECT 1 FROM watched WHERE `key` = :key)")
+    fun isWatched(key: String): Flow<Boolean>
+
+    @Upsert suspend fun saveWatched(w: WatchedEntity)
+
+    @Query("DELETE FROM watched WHERE `key` = :key")
+    suspend fun removeWatched(key: String)
+
+    /** ✅ Mark watched: add to Watched and take it off the Watchlist, atomically. */
+    @Transaction
+    suspend fun markWatched(w: WatchedEntity) {
+        saveWatched(w)
+        remove(w.key)
+    }
 }
 
-@Database(entities = [WatchlistEntity::class, ProgressEntity::class, AlertEntity::class], version = 2, exportSchema = false)
+@Database(entities = [WatchlistEntity::class, ProgressEntity::class, AlertEntity::class, WatchedEntity::class], version = 3, exportSchema = false)
 abstract class LibraryDb : RoomDatabase() {
     abstract fun dao(): LibraryDao
 
@@ -98,6 +132,16 @@ abstract class LibraryDb : RoomDatabase() {
                     "CREATE TABLE IF NOT EXISTS `alerts` (`key` TEXT NOT NULL, `tmdbId` INTEGER NOT NULL, `type` TEXT NOT NULL, " +
                         "`title` TEXT NOT NULL, `posterPath` TEXT, `knownProviderIds` TEXT NOT NULL, `createdAt` INTEGER NOT NULL, " +
                         "PRIMARY KEY(`key`))",
+                )
+            }
+        }
+
+        /** v2 → v3 adds the watched table; everything else is untouched. */
+        val MIGRATION_2_3 = object : Migration(2, 3) {
+            override fun migrate(db: SupportSQLiteDatabase) {
+                db.execSQL(
+                    "CREATE TABLE IF NOT EXISTS `watched` (`key` TEXT NOT NULL, `tmdbId` INTEGER NOT NULL, `type` TEXT NOT NULL, " +
+                        "`title` TEXT NOT NULL, `posterPath` TEXT, `year` TEXT, `watchedAt` INTEGER NOT NULL, PRIMARY KEY(`key`))",
                 )
             }
         }

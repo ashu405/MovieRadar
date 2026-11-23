@@ -99,6 +99,8 @@ fun DetailsScreen(
                 d = d.value,
                 region = s.region,
                 saved = s.saved,
+                watched = s.watched,
+                onToggleWatched = vm::toggleWatched,
                 freeCopy = s.freeCopy,
                 links = s.links,
                 onToggleSaved = vm::toggleSaved,
@@ -126,6 +128,8 @@ private fun DetailsContent(
     d: TitleDetails,
     region: String,
     saved: Boolean,
+    watched: Boolean,
+    onToggleWatched: () -> Unit,
     freeCopy: ArchiveItem?,
     links: Map<Int, String>,
     onToggleSaved: () -> Unit,
@@ -185,7 +189,27 @@ private fun DetailsContent(
             }
             Spacer(Modifier.height(8.dp))
         }
-        Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(10.dp)) {
+        FlowRow(
+            Modifier.padding(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(10.dp),
+            verticalArrangement = Arrangement.spacedBy(4.dp),
+        ) {
+            if (watched) {
+                Button(
+                    onClick = onToggleWatched,
+                    colors = ButtonDefaults.buttonColors(containerColor = RadarColors.Free, contentColor = Color.Black),
+                ) {
+                    Icon(Icons.Outlined.Check, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Watched")
+                }
+            } else {
+                OutlinedButton(onClick = onToggleWatched) {
+                    Icon(Icons.Outlined.Check, null)
+                    Spacer(Modifier.width(6.dp))
+                    Text("Mark as watched")
+                }
+            }
             OutlinedButton(onClick = onToggleSaved) {
                 Icon(if (saved) Icons.Outlined.Check else Icons.Outlined.Add, null)
                 Spacer(Modifier.width(6.dp))

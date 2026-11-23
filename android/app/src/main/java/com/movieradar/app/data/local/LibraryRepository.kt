@@ -22,6 +22,25 @@ class LibraryRepository @Inject constructor(private val dao: LibraryDao) {
         }
     }
 
+    /** ✅ Watched, newest first. */
+    val watched: Flow<List<TitleSummary>> = dao.watched().map { rows ->
+        rows.mapNotNull { r ->
+            val type = MediaType.fromPath(r.type) ?: return@mapNotNull null
+            TitleSummary(r.tmdbId, type, r.title, r.year, r.posterPath, null, "", 0.0, emptyList())
+        }
+    }
+
+    /** Keys ("movie-1") of every watched title, for the ✓ poster badge. */
+    val watchedKeys: Flow<Set<String>> = dao.watchedKeys().map { it.toSet() }
+
+    fun isWatched(t: TitleSummary): Flow<Boolean> = dao.isWatched(t.key)
+
+    /** Marking watched moves the title off the Watchlist; unmarking does not put it back. */
+    suspend fun setWatched(t: TitleSummary, watched: Boolean) {
+        if (watched) dao.markWatched(WatchedEntity(t.key, t.id, t.type.path, t.title, t.posterPath, t.year, System.currentTimeMillis()))
+        else dao.removeWatched(t.key)
+    }
+
     val continueWatching: Flow<List<ProgressEntity>> = dao.continueWatching()
 
     fun isSaved(t: TitleSummary): Flow<Boolean> = dao.isSaved(t.key)

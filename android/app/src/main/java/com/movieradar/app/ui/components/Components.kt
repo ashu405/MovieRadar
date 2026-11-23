@@ -6,6 +6,10 @@ import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
+import com.movieradar.app.domain.key
+import androidx.compose.runtime.compositionLocalOf
+import androidx.compose.material.icons.outlined.Check
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -57,6 +61,9 @@ import com.movieradar.app.ui.theme.RadarColors
 
 private val CardShape = RoundedCornerShape(10.dp)
 
+/** Keys ("movie-1") of ✅ watched titles; posters show a ✓ badge for these. Provided once at the root. */
+val LocalWatchedKeys = compositionLocalOf<Set<String>> { emptySet() }
+
 @OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun PosterCard(
@@ -93,6 +100,21 @@ fun PosterCard(
                 Text(item.title, style = MaterialTheme.typography.labelMedium, textAlign = TextAlign.Center, maxLines = 3)
             }
         }
+        if (item.key in LocalWatchedKeys.current) WatchedBadge(Modifier.align(Alignment.TopEnd).padding(5.dp))
+    }
+}
+
+@Composable
+private fun WatchedBadge(modifier: Modifier) {
+    Box(
+        modifier
+            .size(22.dp)
+            .clip(CircleShape)
+            .background(RadarColors.Free)
+            .semantics { contentDescription = "Watched" },
+        contentAlignment = Alignment.Center,
+    ) {
+        Icon(Icons.Outlined.Check, null, tint = Color.Black, modifier = Modifier.size(15.dp))
     }
 }
 

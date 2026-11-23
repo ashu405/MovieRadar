@@ -24,9 +24,15 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.LinearProgressIndicator
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.SnackbarDuration
+import androidx.compose.material3.SnackbarHost
+import androidx.compose.material3.SnackbarHostState
+import androidx.compose.material3.SnackbarResult
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.rememberCoroutineScope
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -58,18 +64,31 @@ data class LibraryState(
     val continueWatching: List<ProgressEntity> = emptyList(),
     val watchlist: List<TitleSummary> = emptyList(),
     val alerts: List<TitleSummary> = emptyList(),
+    val watched: List<TitleSummary> = emptyList(),
 )
 
 @HiltViewModel
 class LibraryViewModel @Inject constructor(
-    library: LibraryRepository,
+    private val library: LibraryRepository,
     private val alertRepo: AlertRepository,
 ) : ViewModel() {
-    val state: StateFlow<LibraryState> = combine(library.continueWatching, library.watchlist, alertRepo.alerts) { c, w, a ->
-        LibraryState(true, c, w, a)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryState())
+    val state: StateFlow<LibraryState> =
+        combine(library.continueWatching, library.watchlist, alertRepo.alerts, library.watched) { c, w, a, d ->
+            LibraryState(true, c, w, a, d)
+        }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), LibraryState())
 
     fun stopAlert(t: TitleSummary) = viewModelScope.launch { alertRepo.disable(t) }
+
+    /** Long-press on a Watchlist poster: move it to ✅ Watched. */
+    fun markWatched(t: TitleSummary) = viewModelScope.launch { library.setWatched(t, true) }
+
+    /** Undo of [markWatched]: back onto the Watchlist. */
+    fun undoMarkWatched(t: TitleSummary) = viewModelScope.launch {
+        library.setWatched(t, false)
+        library.setSaved(t, true)
+    }
+
+    fun unmarkWatched(t: TitleSummary) = viewModelScope.launch { library.setWatched(t, false) }
 }
 
 @Composable
@@ -79,6 +98,15 @@ fun LibraryScreen(
     vm: LibraryViewModel = hiltViewModel(),
 ) {
     val s by vm.state.collectAsStateWithLifecycle()
+    val snackbar = remember { SnackbarHostState() }
+    val scope = rememberCoroutineScope()
+    fun offerUndo(message: String, undo: () -> Unit) {
+        scope.launch {
+            snackbar.currentSnackbarData?.dismiss()
+            if (snackbar.showSnackbar(message, actionLabel = "Undo", duration = SnackbarDuration.Short) == SnackbarResult.ActionPerformed) undo()
+        }
+    }
+    Box(Modifier.fillMaxSize()) {
     LazyVerticalGrid(
         columns = GridCells.Adaptive(108.dp),
         contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 24.dp),
@@ -123,8 +151,33 @@ fun LibraryScreen(
                 )
             }
         }
-        items(s.watchlist, key = { it.key }) { t -> PosterCard(t, onClick = { onOpen(t) }, width = 108.dp) }
+        if (s.watchlist.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) { Hint("Watched it? Long-press to move it to ✅ Watched.") }
+        }
+        items(s.watchlist, key = { it.key }) { t ->
+            PosterCard(t, onClick = { onOpen(t) }, width = 108.dp, onLongClick = {
+                vm.markWatched(t)
+                offerUndo("Moved to Watched") { vm.undoMarkWatched(t) }
+            })
+        }
+        if (s.watched.isNotEmpty()) {
+            item(span = { GridItemSpan(maxLineSpan) }) { Section("✅ Watched (${s.watched.size})") }
+            item(span = { GridItemSpan(maxLineSpan) }) { Hint("Long-press to unmark.") }
+            items(s.watched, key = { "w-${it.key}" }) { t ->
+                PosterCard(t, onClick = { onOpen(t) }, width = 108.dp, onLongClick = {
+                    vm.unmarkWatched(t)
+                    offerUndo("Removed from Watched") { vm.markWatched(t) }
+                })
+            }
+        }
     }
+    SnackbarHost(snackbar, Modifier.align(Alignment.BottomCenter))
+    }
+}
+
+@Composable
+private fun Hint(text: String) {
+    Text(text, style = MaterialTheme.typography.labelMedium, color = RadarColors.TextSecondary)
 }
 
 @Composable

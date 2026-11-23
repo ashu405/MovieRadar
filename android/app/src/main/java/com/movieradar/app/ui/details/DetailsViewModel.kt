@@ -40,6 +40,7 @@ data class DetailsState(
     val region: String,
     val details: Loadable<TitleDetails>,
     val saved: Boolean = false,
+    val watched: Boolean = false,
     /** Legal Internet Archive copy (movies only), when one confidently matches. */
     val freeCopy: ArchiveItem? = null,
     /** Exact per-service title URLs (provider id → url); empty until loaded or if none found. */
@@ -83,11 +84,13 @@ class DetailsViewModel @Inject constructor(
         }
 
     private val alertOn = alerts.hasAlert(TitleSummary(route.id, type, "", null, null, null, "", 0.0, emptyList()))
+    private val watched = library.isWatched(TitleSummary(route.id, type, "", null, null, null, "", 0.0, emptyList()))
 
     private val extras = combine(links, alertOn, franchise) { l, a, fr -> Triple(l, a, fr) }
+    private val marks = combine(saved, watched) { s, w -> s to w }
 
-    val state: StateFlow<DetailsState> = combine(base, saved, freeCopy, extras) { b, s, f, (l, a, fr) ->
-        b.copy(saved = s, freeCopy = f, links = l, alertOn = a, franchise = fr.first, franchiseStreaming = fr.second)
+    val state: StateFlow<DetailsState> = combine(base, marks, freeCopy, extras) { b, (s, w), f, (l, a, fr) ->
+        b.copy(saved = s, watched = w, freeCopy = f, links = l, alertOn = a, franchise = fr.first, franchiseStreaming = fr.second)
     }
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5_000), DetailsState(SettingsRepository.DEFAULT_REGION, Loadable.Loading))
 
@@ -97,6 +100,13 @@ class DetailsViewModel @Inject constructor(
         val d = (state.value.details as? Loadable.Ready)?.value ?: return
         val now = state.value.saved
         viewModelScope.launch { library.setSaved(d.summary, !now) }
+    }
+
+    /** ✅ Marking watched also takes it off the Watchlist. */
+    fun toggleWatched() {
+        val d = (state.value.details as? Loadable.Ready)?.value ?: return
+        val now = state.value.watched
+        viewModelScope.launch { library.setWatched(d.summary, !now) }
     }
 
     fun setAlert(on: Boolean) {
