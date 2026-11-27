@@ -23,8 +23,8 @@ android {
         applicationId = "com.movieradar.app"
         minSdk = 26
         targetSdk = 37
-        versionCode = 15
-        versionName = "0.9.0"
+        versionCode = 16
+        versionName = "0.9.1"
         buildConfigField("String", "PROXY_BASE_URL", "\"${localProp("movieradar.proxyUrl")}\"")
         buildConfigField("String", "APP_TOKEN", "\"${localProp("movieradar.appToken")}\"")
     }

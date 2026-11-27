@@ -10,7 +10,7 @@ interface ArchiveApi {
     @GET("advancedsearch.php")
     suspend fun search(
         @Query("q") query: String,
-        @Query("fl[]") fields: List<String> = listOf("identifier", "title", "year", "collection", "licenseurl"),
+        @Query("fl[]") fields: List<String> = listOf("identifier", "title", "year", "collection"),
         @Query("sort[]") sort: String = "downloads desc",
         @Query("rows") rows: Int = 20,
         @Query("output") output: String = "json",

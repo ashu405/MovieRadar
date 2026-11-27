@@ -49,7 +49,7 @@ class ArchiveRepository @Inject constructor(private val api: ArchiveApi) {
         val root = api.metadata(identifier)
         val meta = root["metadata"] as? JsonObject ?: error("Item not found")
         val collections = meta["collection"].strings()
-        require(ArchiveRules.isLegal(collections, meta["licenseurl"].firstString())) {
+        require(ArchiveRules.isLegal(collections)) {
             "This item isn't marked public domain, so it can't be played in the app."
         }
         val files = (root["files"] as? JsonArray).orEmpty().mapNotNull { el ->
@@ -74,7 +74,7 @@ class ArchiveRepository @Inject constructor(private val api: ArchiveApi) {
         val docs = root["response"]?.jsonObject?.get("docs")?.jsonArray.orEmpty()
         return docs.mapNotNull { el ->
             val d = el as? JsonObject ?: return@mapNotNull null
-            if (!ArchiveRules.isLegal(d["collection"].strings(), d["licenseurl"].firstString())) return@mapNotNull null
+            if (!ArchiveRules.isLegal(d["collection"].strings())) return@mapNotNull null
             ArchiveItem(
                 identifier = d["identifier"].firstString() ?: return@mapNotNull null,
                 title = d["title"].firstString() ?: return@mapNotNull null,
@@ -94,6 +94,6 @@ class ArchiveRepository @Inject constructor(private val api: ArchiveApi) {
     companion object {
         private val QUERY_STOP_WORDS = setOf("and", "or", "not", "to")
         private val LEGAL_CLAUSE =
-            "(collection:(${ArchiveRules.CURATED.joinToString(" OR ")}) OR licenseurl:*publicdomain* OR licenseurl:*creativecommons*)"
+            "collection:(${ArchiveRules.CURATED.joinToString(" OR ")})"
     }
 }

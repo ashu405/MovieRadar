@@ -14,23 +14,23 @@ class ArchiveRulesTest {
     // --- Legal filter (real values seen on archive.org) ---
 
     @Test fun `curated public-domain collection is playable without a license url`() {
-        assertTrue(ArchiveRules.isLegal(listOf("silent_films", "SciFi_Horror", "feature_films", "moviesandfilms"), null))
+        assertTrue(ArchiveRules.isLegal(listOf("silent_films", "SciFi_Horror", "feature_films", "moviesandfilms")))
     }
 
-    @Test fun `public domain and creative commons licenses are playable anywhere`() {
-        assertTrue(ArchiveRules.isLegal(listOf("opensource_movies"), "http://creativecommons.org/publicdomain/mark/1.0/"))
-        assertTrue(ArchiveRules.isLegal(emptyList(), "http://creativecommons.org/licenses/publicdomain/"))
-        assertTrue(ArchiveRules.isLegal(emptyList(), "https://creativecommons.org/licenses/by/4.0/"))
+    @Test fun `community uploads are not playable even when self-labelled public domain (Wallbanger 2024)`() {
+        // archive.org/details/wallbanger-2024-67208: a pirated 2024 film in opensource_movies, marked CC0 by the uploader.
+        assertFalse(ArchiveRules.isLegal(listOf("opensource_movies")))
+        assertFalse(ArchiveRules.isLegal(listOf("opensource_movies", "fav-supermanga")))
+        assertFalse(ArchiveRules.isLegal(emptyList()))
     }
 
-    @Test fun `unsorted uploads without a license are not playable even if tagged feature_films`() {
-        assertFalse(ArchiveRules.isLegal(listOf("feature_films_unsorted", "feature_films"), null))
+    @Test fun `moderated collections stay playable`() {
+        assertTrue(ArchiveRules.isLegal(listOf("feature_films")))
+        assertTrue(ArchiveRules.isLegal(listOf("film_noir", "opensource_movies")))
     }
 
-    @Test fun `random uploads with no license are not playable`() {
-        assertFalse(ArchiveRules.isLegal(listOf("opensource_movies"), null))
-        assertFalse(ArchiveRules.isLegal(emptyList(), ""))
-        assertFalse(ArchiveRules.isLegal(listOf("opensource_movies"), "https://example.com/all-rights-reserved"))
+    @Test fun `unsorted uploads are not playable even if tagged feature_films`() {
+        assertFalse(ArchiveRules.isLegal(listOf("feature_films_unsorted", "feature_films")))
     }
 
     // --- Title matching ---

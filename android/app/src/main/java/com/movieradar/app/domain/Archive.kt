@@ -40,12 +40,13 @@ object ArchiveRules {
     )
 
     /**
-     * Playable only if public-domain / Creative Commons licensed, or filed in a curated
-     * public-domain collection (uploads still sitting in an "unsorted" bucket don't count).
+     * Playable only if filed in one of Internet Archive's moderated public-domain collections
+     * (and not still sitting in an "unsorted" bucket).
+     *
+     * Self-applied licenses are deliberately ignored: anyone can upload a commercial film to the
+     * community bucket and label it CC0 (e.g. "Wallbanger 2024", a pirated copy marked public domain).
      */
-    fun isLegal(collections: List<String>, licenseUrl: String?): Boolean {
-        val lic = licenseUrl.orEmpty().lowercase()
-        if ("creativecommons.org/publicdomain" in lic || "creativecommons.org/licenses/" in lic) return true
+    fun isLegal(collections: List<String>): Boolean {
         if (collections.any { it.contains("unsorted", ignoreCase = true) }) return false
         return collections.any { it in CURATED }
     }
